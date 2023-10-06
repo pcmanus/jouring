@@ -11,7 +11,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.BiConsumer;
 
-public class SyncIOVThreadEngine extends Engine {
+public class SyncIOVThreadEngine extends SyncEngine {
     private final Map<Path, FileChannel> channels = new HashMap<>();
 
     protected SyncIOVThreadEngine(

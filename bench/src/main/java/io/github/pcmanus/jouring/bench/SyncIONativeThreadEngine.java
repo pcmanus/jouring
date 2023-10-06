@@ -11,7 +11,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.BiConsumer;
 
-public class SyncIONativeThreadEngine extends Engine {
+public class SyncIONativeThreadEngine extends SyncEngine {
     private record ThreadState(Map<Path, FileChannel> channels, ByteBuffer buffer) {}
     private static final ThreadLocal<ThreadState> threadState = new ThreadLocal<>();
 

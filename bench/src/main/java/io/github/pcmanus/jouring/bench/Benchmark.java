@@ -67,6 +67,8 @@ public class Benchmark implements Callable<Integer> {
                 this.seed
         );
 
+        printParameters(parameters);
+
         Stream<ReadTask> tasks = ReadTaskGenerators.uniform(this.seed, this.files, this.readCount);
         CompletionTracker completionTracker = new CompletionTracker();
 
@@ -77,6 +79,10 @@ public class Benchmark implements Callable<Integer> {
         }
         printer.printFinalSummary();
         return 0;
+    }
+
+    private void printParameters(Parameters parameters) {
+        System.out.printf("Running with: threads=%d, blockSize=%s.%n", parameters.threads(), formatBytes(parameters.blockSize()));
     }
 
     public static void main(String[] args) {
@@ -160,41 +166,42 @@ public class Benchmark implements Callable<Integer> {
             System.out.printf("checksum: %d%n", checksum);
         }
 
-        private static String formatQuantity(long iops) {
-            if (iops < 1000) {
-                return String.format("%d", iops);
-            } else if (iops < 1_000_000) {
-                return String.format("%.2fk", iops / 1000.0);
-            } else if (iops < 1_000_000_000) {
-                return String.format("%.2fM", iops / 1_000_000.0);
-            } else {
-                return String.format("%.2fG", iops / 1_000_000_000.0);
-            }
+    }
+
+    private static String formatQuantity(long iops) {
+        if (iops < 1000) {
+            return String.format("%d", iops);
+        } else if (iops < 1_000_000) {
+            return String.format("%.2fk", iops / 1000.0);
+        } else if (iops < 1_000_000_000) {
+            return String.format("%.2fM", iops / 1_000_000.0);
+        } else {
+            return String.format("%.2fG", iops / 1_000_000_000.0);
+        }
+    }
+
+    private static String formatBytes(long bytes) {
+        if (bytes < 1024) {
+            return String.format("%dB", bytes);
+        } else if (bytes < 1024 * 1024) {
+            return String.format("%.2fKiB", bytes / 1024.0);
+        } else if (bytes < 1024 * 1024 * 1024) {
+            return String.format("%.2fMiB", bytes / (1024.0 * 1024));
+        } else {
+            return String.format("%.2fGiB", bytes / (1024.0 * 1024 * 1024));
+        }
+    }
+
+    private static String formatElapsed(long elapsedNanos) {
+        if (elapsedNanos < 1000) {
+            return String.format("%dns", elapsedNanos);
+        } else if (elapsedNanos < 1_000_000) {
+            return String.format("%.2fµs", elapsedNanos / 1000.0);
+        } else if (elapsedNanos < 1_000_000_000) {
+            return String.format("%.2fms", elapsedNanos / 1_000_000.0);
+        } else {
+            return String.format("%.2fs", elapsedNanos / 1_000_000_000.0);
         }
 
-        private static String formatBytes(long bytes) {
-            if (bytes < 1024) {
-                return String.format("%dB", bytes);
-            } else if (bytes < 1024 * 1024) {
-                return String.format("%.2fKiB", bytes / 1024.0);
-            } else if (bytes < 1024 * 1024 * 1024) {
-                return String.format("%.2fMiB", bytes / (1024.0 * 1024));
-            } else {
-                return String.format("%.2fGiB", bytes / (1024.0 * 1024 * 1024));
-            }
-        }
-
-        private static String formatElapsed(long elapsedNanos) {
-            if (elapsedNanos < 1000) {
-                return String.format("%dns", elapsedNanos);
-            } else if (elapsedNanos < 1_000_000) {
-                return String.format("%.2fµs", elapsedNanos / 1000.0);
-            } else if (elapsedNanos < 1_000_000_000) {
-                return String.format("%.2fms", elapsedNanos / 1_000_000.0);
-            } else {
-                return String.format("%.2fs", elapsedNanos / 1_000_000_000.0);
-            }
-
-        }
     }
 }

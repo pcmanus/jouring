@@ -20,6 +20,12 @@
       <artifactId>picocli</artifactId>
       <version>4.7.5</version>
     </dependency>
+    <dependency>
+      <groupId>one.jasyncfio</groupId>
+      <artifactId>jasyncfio</artifactId>
+      <version>0.0.8</version>
+      <classifier>linux-amd64</classifier>
+    </dependency>
   </dependencies>
 
   <build>

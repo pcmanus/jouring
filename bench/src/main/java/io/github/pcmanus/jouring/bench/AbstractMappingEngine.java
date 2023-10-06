@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
-abstract class AbstractMappingEngine extends Engine {
+abstract class AbstractMappingEngine extends SyncEngine {
     private final Map<Path, MappedFile> mappedFiles = new HashMap<>();
 
     AbstractMappingEngine(BiConsumer<ReadTask, ByteBuffer> completedTaskCallback, Benchmark.Parameters parameters) {

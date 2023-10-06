@@ -14,21 +14,11 @@ public abstract class Engine {
         this.parameters = parameters;
     }
 
-    protected abstract ExecutorService createExecutorService();
-
-    protected abstract ByteBuffer handleTask(ReadTask task);
-
-    public void execute(Stream<ReadTask> tasks) {
-        try (var executor = createExecutorService()) {
-            tasks.forEach(task -> executor.submit(() -> {
-                try {
-                    completedTaskCallback.accept(task, handleTask(task));
-                } catch (Exception e) {
-                    System.err.printf("Error executing %s: %s%n", task, e);
-                }
-            }));
-        }
+    protected void ack(ReadTask task,  ByteBuffer result) {
+        completedTaskCallback.accept(task,  result);
     }
+
+    public abstract void execute(Stream<ReadTask> tasks);
 
     public interface Ctor {
         Engine create(

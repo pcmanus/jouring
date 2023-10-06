@@ -5,7 +5,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.BiConsumer;
 
-public class NoopEngine extends Engine {
+public class NoopEngine extends SyncEngine {
     private final ByteBuffer fakeRead;
 
     NoopEngine(BiConsumer<ReadTask, ByteBuffer> completedTaskCallback, Benchmark.Parameters parameters) {

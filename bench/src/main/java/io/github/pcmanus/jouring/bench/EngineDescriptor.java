@@ -24,6 +24,26 @@ public enum EngineDescriptor {
     MMAP_VTHREAD(
             "Reads are performed by virtual threads using mmaping of the files",
             MappingVThreadEngine::new
+    ),
+
+    IOURING_VTHREAD(
+            "Reads are performed by virtual threads using io_uring",
+            IOUringVThreadEngine::new
+    ),
+
+    IOURING_NATIVE(
+            "Reads are performed by native threads using io_uring",
+            IOUringNativeThreadEngine::new
+    ),
+
+    IOURING_ASYNC(
+            "Reads are asynchronously using io_uring",
+            IOUringAsyncEngine::new
+    ),
+
+    IOURING_MULTI(
+            "Reads are asynchronously using io_uring with one ring per configured threads",
+            IOUringMultiRingEgnine::new
     );
 
     public final String description;
