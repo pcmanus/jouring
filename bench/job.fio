@@ -1,0 +1,15 @@
+[global]
+filename=random_file_4G
+bs=64k
+iodepth=128
+direct=0
+thread=1
+rw=randread
+numjobs=6
+
+[iouring]
+ioengine=io_uring
+
+[syncio]
+ioengine=sync
+
