@@ -41,9 +41,14 @@ public enum EngineDescriptor {
             IOUringAsyncEngine::new
     ),
 
+    IOURING_BATCH(
+            "Reads are asynchronously using io_uring, batching stuffs",
+            IOUringBatchedAsyncEngine::new
+    ),
+
     IOURING_MULTI(
             "Reads are asynchronously using io_uring with one ring per configured threads",
-            IOUringMultiRingEgnine::new
+            IOUringMultiRingEngine::new
     );
 
     public final String description;

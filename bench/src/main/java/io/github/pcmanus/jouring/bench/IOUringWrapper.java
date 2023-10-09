@@ -11,12 +11,13 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public class IOUringWrapper {
+    private static final int DEPTH = 128;
     private final EventExecutor executor;
     private final Map<Path, AsyncFile> asyncFiles = new HashMap<>();
 
     IOUringWrapper(Benchmark.Parameters parameters) {
         this.executor = EventExecutor.builder()
-                .entries(128)
+                .entries(DEPTH)
                 .ioRingSetupIoPoll()
                 .build();
         parameters.files().forEach(path -> {
@@ -36,5 +37,9 @@ public class IOUringWrapper {
             buffer.flip();
             return buffer;
         });
+    }
+
+    public int depth() {
+        return DEPTH;
     }
 }

@@ -45,10 +45,10 @@ public class Benchmark implements Callable<Integer> {
 
     @CommandLine.Option(
             names = {"-r", "--reads"},
-            description = "Number of reads to perform, default to 1M",
+            description = "Number of reads to perform, default to 10M",
             paramLabel = "<int>"
     )
-    private int readCount = 1_000_000;
+    private int readCount = 5_000_000;
 
     @CommandLine.Option(
             names = {"-s", "--seed"},
