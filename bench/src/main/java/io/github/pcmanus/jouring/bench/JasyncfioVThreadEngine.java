@@ -5,12 +5,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.BiConsumer;
 
-public class IOUringVThreadEngine extends SyncEngine {
-    private final IOUringWrapper wrapper;
+public class JasyncfioVThreadEngine extends SyncEngine {
+    private final JasyncfioWrapper wrapper;
 
-    protected IOUringVThreadEngine(BiConsumer<ReadTask, ByteBuffer> completedTaskCallback, Benchmark.Parameters parameters) {
+    protected JasyncfioVThreadEngine(BiConsumer<ReadTask, ByteBuffer> completedTaskCallback, Benchmark.Parameters parameters) {
         super(completedTaskCallback, parameters);
-        this.wrapper = new IOUringWrapper(parameters);
+        this.wrapper = new JasyncfioWrapper(parameters);
     }
 
     @Override

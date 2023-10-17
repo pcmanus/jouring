@@ -27,21 +27,19 @@
       <classifier>linux-amd64</classifier>
     </dependency>
     <dependency>
-      <groupId>org.openjdk.jmh</groupId>
-      <artifactId>jmh-core</artifactId>
-      <scope>test</scope>
-      <version>1.35</version>
-    </dependency>
-    <dependency>
-      <groupId>org.openjdk.jmh</groupId>
-      <artifactId>jmh-generator-annprocess</artifactId>
-      <scope>test</scope>
-      <version>1.35</version>
-    </dependency>
-    <dependency>
       <groupId>org.jctools</groupId>
       <artifactId>jctools-core</artifactId>
       <version>4.0.1</version>
+    </dependency>
+    <dependency>
+      <groupId>com.indeed</groupId>
+      <artifactId>util-mmap</artifactId>
+      <version>1.0.52-3042601</version>
+    </dependency>
+    <dependency>
+      <groupId>io.github.pcmanus</groupId>
+      <artifactId>jouring</artifactId>
+      <version>${revision}</version>
     </dependency>
 </dependencies>
 

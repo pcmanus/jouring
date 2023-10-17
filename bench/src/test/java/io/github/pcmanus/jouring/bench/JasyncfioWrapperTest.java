@@ -7,14 +7,13 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class IOUringBatchedAsyncEngineTest {
-
+class JasyncfioWrapperTest {
     @Test
     void clearAll() {
         List<String> strs = new ArrayList<>(List.of("a", "b", "c", "d", "e", "f", "g"));
 
         int[] toClear = new int[] { 1, 3, 6, 0, 2, 4, 5 };
-        IOUringBatchedAsyncEngine.clearAll(strs, toClear, 3);
+        JasyncfioWrapper.clearAll(strs, toClear, 3);
         assertEquals(strs, List.of("a", "c", "e", "f"));
     }
 }

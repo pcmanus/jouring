@@ -13,6 +13,8 @@ public abstract class SyncEngine extends Engine  {
     protected abstract ExecutorService createExecutorService();
     protected abstract ByteBuffer handleTask(ReadTask task);
 
+    protected void onFinished() {}
+
     public void execute(Stream<ReadTask> tasks) {
         try (var executor = createExecutorService()) {
             tasks.forEach(task -> executor.submit(() -> {
@@ -23,5 +25,6 @@ public abstract class SyncEngine extends Engine  {
                 }
             }));
         }
+        this.onFinished();
     }
 }

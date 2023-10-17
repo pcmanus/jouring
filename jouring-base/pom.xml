@@ -13,4 +13,18 @@
   <artifactId>jouring</artifactId>
 
   <name>Jouring library</name>
+
+  <dependencies>
+    <dependency>
+      <groupId>one.nalim</groupId>
+      <artifactId>nalim</artifactId>
+      <version>1.1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jctools</groupId>
+      <artifactId>jctools-core</artifactId>
+      <version>4.0.1</version>
+    </dependency>
+  </dependencies>
+
 </project>

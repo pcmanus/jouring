@@ -4,16 +4,21 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
-public class IOUringAsyncEngine extends AsyncEngine {
-    private final IOUringWrapper wrapper;
+public class JasyncAsyncEngine extends AsyncEngine<ByteBuffer> {
+    private final JasyncfioWrapper wrapper;
 
-    protected IOUringAsyncEngine(BiConsumer<ReadTask, ByteBuffer> completedTaskCallback, Benchmark.Parameters parameters) {
+    protected JasyncAsyncEngine(BiConsumer<ReadTask, ByteBuffer> completedTaskCallback, Benchmark.Parameters parameters) {
         super(completedTaskCallback, parameters);
-        this.wrapper = new IOUringWrapper(parameters);
+        this.wrapper = new JasyncfioWrapper(parameters);
     }
 
     @Override
     protected CompletableFuture<ByteBuffer> submitTask(ReadTask task) {
         return wrapper.read(task,  ByteBuffer.allocateDirect(parameters.blockSize()));
+    }
+
+    @Override
+    protected ByteBuffer buffer(ByteBuffer byteBuffer) {
+        return byteBuffer;
     }
 }

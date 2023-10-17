@@ -30,6 +30,26 @@ public class Benchmark implements Callable<Integer> {
     private EngineDescriptor engine = EngineDescriptor.SYNC_NATIVE;
 
     @CommandLine.Option(
+            names = {"--nalim"},
+            description = "Whether to use the nalim (instead of panama) for the io_uring engines, default to false"
+    )
+    private boolean useNalim = false;
+
+    @CommandLine.Option(
+            names = {"-d", "--depth"},
+            description = "The depth of the underlying ring for io_uring engines, default to 128",
+            paramLabel = "<int>"
+    )
+    private int depth = 128;
+
+    @CommandLine.Option(
+            names = {"--rings"},
+            description = "The number of rings used for io_uring engines, default to 1",
+            paramLabel = "<int>"
+    )
+    private int ringCount = 1;
+
+    @CommandLine.Option(
             names = {"-t", "--threads"},
             description = "Number of threads, default to cpu count",
             paramLabel = "<int>"
@@ -57,6 +77,12 @@ public class Benchmark implements Callable<Integer> {
     )
     private long seed = new Random().nextLong();
 
+    @CommandLine.Option(
+            names = {"--direct"},
+            description = "Use direct IO"
+    )
+    private boolean directIO = false;
+
     @Override
     public Integer call() throws Exception {
         Parameters parameters = new Parameters(
@@ -64,12 +90,16 @@ public class Benchmark implements Callable<Integer> {
                 this.threads,
                 this.blockSizeKb * 1024,
                 this.readCount,
-                this.seed
+                this.seed,
+                this.depth,
+                this.useNalim,
+                this.directIO,
+                this.ringCount
         );
 
         printParameters(parameters);
 
-        Stream<ReadTask> tasks = ReadTaskGenerators.uniform(this.seed, this.files, this.readCount);
+        Stream<ReadTask> tasks = ReadTaskGenerators.uniform(parameters);
         CompletionTracker completionTracker = new CompletionTracker();
 
         MetricsPrinter printer = new MetricsPrinter(completionTracker);
@@ -82,7 +112,25 @@ public class Benchmark implements Callable<Integer> {
     }
 
     private void printParameters(Parameters parameters) {
-        System.out.printf("Running with: threads=%d, blockSize=%s.%n", parameters.threads(), formatBytes(parameters.blockSize()));
+        String engineOptions = "";
+        if (engine.isJasyncfio()) {
+            engineOptions = String.format("(depth=%d)", parameters.depth());
+        } else if (engine.isNonJasyncfioIOUring()) {
+            engineOptions = String.format(
+                    "(%s, depth=%d, rings=%d)",
+                    parameters.useNalim ? "nalim" : "panama",
+                    parameters.depth(),
+                    parameters.ringCount());
+        }
+        System.out.printf(
+                "Running with: engine=%s%s, reads=%s, threads=%d, blockSize=%s, %s I/O.%n",
+                engine.name().toLowerCase(),
+                engineOptions,
+                formatQuantity(parameters.readCount()),
+                parameters.threads(),
+                formatBytes(parameters.blockSize()),
+                parameters.directIO() ? "direct" : "buffered"
+        );
     }
 
     public static void main(String[] args) {
@@ -97,7 +145,11 @@ public class Benchmark implements Callable<Integer> {
             int threads,
             int blockSize,
             int readCount,
-            long seed
+            long seed,
+            int depth,
+            boolean useNalim,
+            boolean directIO,
+            int ringCount
     ) {
     }
 
@@ -169,12 +221,20 @@ public class Benchmark implements Callable<Integer> {
     }
 
     private static String formatQuantity(long iops) {
-        if (iops < 1000) {
+        if (iops < 1_000) {
             return String.format("%d", iops);
         } else if (iops < 1_000_000) {
-            return String.format("%.2fk", iops / 1000.0);
+            if (iops % 1_000 == 0) {
+                return String.format("%dk", iops / 1_000);
+            } else {
+                return String.format("%.2fk", iops / 1000.0);
+            }
         } else if (iops < 1_000_000_000) {
-            return String.format("%.2fM", iops / 1_000_000.0);
+            if (iops % 1_000_000 == 0) {
+                return String.format("%dM", iops / 1_000_000);
+            } else {
+                return String.format("%.2fM", iops / 1_000_000.0);
+            }
         } else {
             return String.format("%.2fG", iops / 1_000_000_000.0);
         }

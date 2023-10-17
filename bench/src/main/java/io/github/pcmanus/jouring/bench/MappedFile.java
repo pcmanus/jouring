@@ -9,7 +9,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 
 public class MappedFile {
-    private static final int MAX_MAPPING_SIZE = Integer.MAX_VALUE;
+    public static final int MAX_MAPPING_SIZE = Integer.MAX_VALUE;
 
     public final long length;
     private final ByteBuffer[] buffers;

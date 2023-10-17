@@ -21,34 +21,49 @@ public enum EngineDescriptor {
             MappingNativeThreadEngine::new
     ),
 
+    MMAP2_NATIVE(
+            "Reads are performed by native threads using mmaping of the files (through MMapBuffer)",
+            Mapping2NativeThreadEngine::new
+    ),
+
     MMAP_VTHREAD(
             "Reads are performed by virtual threads using mmaping of the files",
             MappingVThreadEngine::new
     ),
 
-    IOURING_VTHREAD(
-            "Reads are performed by virtual threads using io_uring",
-            IOUringVThreadEngine::new
+    JASYNCFIO_VTHREAD(
+            "Reads are performed by virtual threads using the jacincfio lib (io_uring underneath)",
+            JasyncfioVThreadEngine::new
     ),
 
-    IOURING_NATIVE(
+    JASYNCFIO_NATIVE(
             "Reads are performed by native threads using io_uring",
-            IOUringNativeThreadEngine::new
+            JasyncfioNativeThreadEngine::new
+    ),
+
+    JASYNCFIO_ASYNC(
+            "Reads are asynchronously using io_uring",
+            JasyncAsyncEngine::new
+    ),
+
+    JASYNCFIO_BATCH(
+            "Reads are asynchronously using io_uring, batching stuffs",
+            JasyncfioBatchedAsyncEngine::new
+    ),
+
+    JASYNCFIO_MULTI(
+            "Reads are asynchronously using io_uring with one ring per configured threads",
+            JasyncfioMultiRingEngine::new
+    ),
+
+    IOURING_VTHREAD(
+            "Reads are asynchronously using io_uring with one ring, through nalim",
+            IOUringVThread::new
     ),
 
     IOURING_ASYNC(
-            "Reads are asynchronously using io_uring",
-            IOUringAsyncEngine::new
-    ),
-
-    IOURING_BATCH(
-            "Reads are asynchronously using io_uring, batching stuffs",
-            IOUringBatchedAsyncEngine::new
-    ),
-
-    IOURING_MULTI(
-            "Reads are asynchronously using io_uring with one ring per configured threads",
-            IOUringMultiRingEngine::new
+            "Reads are asynchronously using io_uring with one ring, through nalim",
+            IOUringAsync::new
     );
 
     public final String description;
@@ -57,5 +72,16 @@ public enum EngineDescriptor {
     EngineDescriptor(String description, Engine.Ctor ctor) {
         this.description = description;
         this.ctor = ctor;
+    }
+
+    boolean isNonJasyncfioIOUring() {
+        return this == IOURING_VTHREAD || this == IOURING_ASYNC;
+    }
+
+    boolean isJasyncfio() {
+        return switch (this) {
+            case JASYNCFIO_NATIVE, JASYNCFIO_VTHREAD, JASYNCFIO_ASYNC, JASYNCFIO_BATCH, JASYNCFIO_MULTI -> true;
+            default -> false;
+        };
     }
 }
