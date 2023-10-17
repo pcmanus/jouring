@@ -1,11 +1,7 @@
 #!/bin/sh
 
-#java -jar ./target/bench-0.1.0-SNAPSHOT-jar-with-dependencies.jar "$@"
-
-
 MAINCLASS='io.github.pcmanus.jouring.bench.Benchmark'
 CLASSPATH=$HOME/Git/jouring/bench/target/classes:$HOME/.m2/repository/info/picocli/picocli/4.7.5/picocli-4.7.5.jar:$HOME/.m2/repository/one/jasyncfio/jasyncfio/0.0.8/jasyncfio-0.0.8-linux-amd64.jar:$HOME/.m2/repository/org/jctools/jctools-core/4.0.1/jctools-core-4.0.1.jar:$HOME/.m2/repository/com/indeed/util-mmap/1.0.52-3042601/util-mmap-1.0.52-3042601.jar:$HOME/.m2/repository/com/google/guava/guava/20.0/guava-20.0.jar:$HOME/.m2/repository/org/slf4j/slf4j-api/1.7.32/slf4j-api-1.7.32.jar:$HOME/.m2/repository/com/indeed/util-unsafe/1.0.52-3042601/util-unsafe-1.0.52-3042601.jar:$HOME/Git/jouring/jouring-base/target/classes:$HOME/.m2/repository/one/nalim/nalim/1.1/nalim-1.1.jar
-
 
 java --enable-preview                                     \
 	-XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI \
@@ -15,8 +11,3 @@ java --enable-preview                                     \
 	--add-opens=java.base/java.nio=ALL-UNNAMED        \
 	--enable-native-access=ALL-UNNAMED                \
 	-classpath $CLASSPATH $MAINCLASS "$@"
-
-
-# -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -javaagent:nalim.jar -Djava.library.path=$HOME/Tmp/nalim-test/src/main/c
-# --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED --enable-preview
-#
