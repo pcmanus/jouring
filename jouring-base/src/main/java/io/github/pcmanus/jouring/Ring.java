@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 abstract class Ring implements AutoCloseable {
-    protected final int depth;
+    protected final Parameters parameters;
     protected final ReadSubmissions pendingSubmissions;
 
     protected final ByteBuffer completionIdsBuffer;
@@ -13,8 +13,9 @@ abstract class Ring implements AutoCloseable {
     private int inFlight;
     private boolean closed;
 
-    Ring(int depth) {
-        this.depth = depth;
+    Ring(Parameters parameters) {
+        int depth = parameters.depth;
+        this.parameters = parameters;
         this.pendingSubmissions = new ReadSubmissions(depth);
         this.completionIdsBuffer = ByteBuffer
                 .allocateDirect(8 * depth * 2)
@@ -23,7 +24,7 @@ abstract class Ring implements AutoCloseable {
     }
 
     int depth() {
-        return depth;
+        return parameters.depth;
     }
 
     int maxInFlight() {
@@ -31,7 +32,7 @@ abstract class Ring implements AutoCloseable {
     }
 
     int roomAvailable() {
-        return Math.min(this.maxInFlight - this.inFlight, this.pendingSubmissions.remaining());
+        return Math.min(this.maxInFlight - this.inFlight - this.pendingSubmissions.size(), this.pendingSubmissions.remaining());
     }
 
     ReadSubmissions submissions() {
@@ -78,4 +79,9 @@ abstract class Ring implements AutoCloseable {
         this.closed = true;
         this.destroyRing();
     }
+
+    record Parameters(
+            int depth,
+            boolean useSQPolling
+    ) {}
 }

@@ -15,6 +15,7 @@ public interface IOExecutor extends AutoCloseable {
         private int depth = 128;
         private int bufferSize = 4096;
         private boolean useNalim = false;
+        private boolean useSQPolling = false;
 
         public Builder depth(int depth) {
             this.depth = depth;
@@ -31,18 +32,28 @@ public interface IOExecutor extends AutoCloseable {
             return this;
         }
 
-        private Ring newRing() {
-            return this.useNalim ? new NalimRing(this.depth) : new PanamaRing(this.depth);
+        public Builder useSQPolling(boolean useSQPolling) {
+            this.useSQPolling = useSQPolling;
+            return this;
+        }
+
+        private Ring.Parameters parameters() {
+            return new Ring.Parameters(this.depth, this.useSQPolling);
+        }
+
+        private Ring newRing(Ring.Parameters params) {
+            return this.useNalim ? new NalimRing(params) : new PanamaRing(params);
         }
 
         public IOExecutor build() {
-            return new EventLoop(newRing(), this.bufferSize);
+            return new EventLoop(newRing(parameters()), this.bufferSize);
         }
 
         public IOExecutor buildMulti(int count) {
+            var params = parameters();
             EventLoop[] loops = new EventLoop[count];
             for (int i = 0; i < count; i++) {
-                loops[i] = new EventLoop(newRing(), this.bufferSize);
+                loops[i] = new EventLoop(newRing(params), this.bufferSize);
             }
             return new EventLoops(loops);
         }

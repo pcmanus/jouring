@@ -43,6 +43,12 @@ public class Benchmark implements Callable<Integer> {
     private int depth = 128;
 
     @CommandLine.Option(
+            names = {"--sq-polling"},
+            description = "Whether to use submission queue polling for the io_uring engines, default to false"
+    )
+    private boolean useSQPolling = false;
+
+    @CommandLine.Option(
             names = {"--rings"},
             description = "The number of rings used for io_uring engines, default to 1",
             paramLabel = "<int>"
@@ -83,6 +89,13 @@ public class Benchmark implements Callable<Integer> {
     )
     private boolean directIO = false;
 
+    @CommandLine.Option(
+            names = {"--output-format"},
+            description = "Format of the output. Supported: ${COMPLETION-CANDIDATES}",
+            paramLabel = "<format>"
+    )
+    private OutputFormat outputFormat = OutputFormat.HUMAN;
+
     @Override
     public Integer call() throws Exception {
         Parameters parameters = new Parameters(
@@ -94,7 +107,8 @@ public class Benchmark implements Callable<Integer> {
                 this.depth,
                 this.useNalim,
                 this.directIO,
-                this.ringCount
+                this.ringCount,
+                this.useSQPolling
         );
 
         printParameters(parameters);
@@ -102,7 +116,7 @@ public class Benchmark implements Callable<Integer> {
         Stream<ReadTask> tasks = ReadTaskGenerators.uniform(parameters);
         CompletionTracker completionTracker = new CompletionTracker();
 
-        MetricsPrinter printer = new MetricsPrinter(completionTracker);
+        MetricsPrinter printer = new MetricsPrinter(completionTracker, outputFormat);
         try (ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor()) {
             scheduledExecutor.scheduleAtFixedRate(printer::printProgress, 1, 1, TimeUnit.SECONDS);
             engine.ctor.create(completionTracker::onCompleted, parameters).execute(tasks);
@@ -112,25 +126,37 @@ public class Benchmark implements Callable<Integer> {
     }
 
     private void printParameters(Parameters parameters) {
-        String engineOptions = "";
-        if (engine.isJasyncfio()) {
-            engineOptions = String.format("(depth=%d)", parameters.depth());
-        } else if (engine.isNonJasyncfioIOUring()) {
-            engineOptions = String.format(
-                    "(%s, depth=%d, rings=%d)",
-                    parameters.useNalim ? "nalim" : "panama",
-                    parameters.depth(),
-                    parameters.ringCount());
+        if (outputFormat != OutputFormat.HUMAN) {
+            return;
         }
+
         System.out.printf(
                 "Running with: engine=%s%s, reads=%s, threads=%d, blockSize=%s, %s I/O.%n",
                 engine.name().toLowerCase(),
-                engineOptions,
+                getEngineOptions(parameters),
                 formatQuantity(parameters.readCount()),
                 parameters.threads(),
                 formatBytes(parameters.blockSize()),
                 parameters.directIO() ? "direct" : "buffered"
         );
+    }
+
+    private String getEngineOptions(Parameters parameters) {
+        if (engine.isJasyncfio()) {
+            return String.format("(depth=%d)", parameters.depth());
+        } else if (engine.isNonJasyncfioIOUring()) {
+            String moreOpts = "";
+            if (parameters.useSQPolling()) {
+                moreOpts += ", sq-polling";
+            }
+            return String.format(
+                    "(%s, depth=%d, rings=%d%s)",
+                    parameters.useNalim ? "nalim" : "panama",
+                    parameters.depth(),
+                    parameters.ringCount(),
+                    moreOpts);
+        }
+        return "";
     }
 
     public static void main(String[] args) {
@@ -149,23 +175,24 @@ public class Benchmark implements Callable<Integer> {
             int depth,
             boolean useNalim,
             boolean directIO,
-            int ringCount
+            int ringCount,
+            boolean useSQPolling
     ) {
     }
 
     static class MetricsPrinter {
         private final CompletionTracker tracker;
+        private final OutputFormat format;
         private final long startNanos;
-        private long lastTick;
         private long completedAtLastTick = 0;
         private long bytesReadAtLastTick = 0;
 
         private boolean hasPrintedProgress = false;
 
-        MetricsPrinter(CompletionTracker tracker) {
+        MetricsPrinter(CompletionTracker tracker, OutputFormat format) {
             this.tracker = tracker;
+            this.format = format;
             this.startNanos = System.nanoTime();
-            this.lastTick = this.startNanos;
         }
 
         void printProgress() {
@@ -174,19 +201,27 @@ public class Benchmark implements Callable<Integer> {
             long completed = this.tracker.completed();
             long bytesRead = this.tracker.bytesRead();
 
-            long elapsed = now - this.lastTick;
-            this.lastTick = now;
-
             long completedSinceLastTick = completed - this.completedAtLastTick;
             this.completedAtLastTick = completed;
 
             long bytesReadSinceLastTick = bytesRead - this.bytesReadAtLastTick;
             this.bytesReadAtLastTick = bytesRead;
 
-            System.out.printf("IOPS: %s, BW=%s/s%n", formatQuantity(completedSinceLastTick), formatBytes(bytesReadSinceLastTick));
+            if (format == OutputFormat.CSV) {
+                long elapsed = now - startNanos;
+                long elapsedSec = Math.round(((double)elapsed) / TimeUnit.SECONDS.toNanos(1));
+                // elapsed_seconds, iops, bw(bytes)
+                System.out.printf("%d,%d,%d%n", elapsedSec, completedSinceLastTick, bytesReadSinceLastTick);
+            } else {
+                System.out.printf("IOPS: %s, BW=%s/s%n", formatQuantity(completedSinceLastTick), formatBytes(bytesReadSinceLastTick));
+            }
         }
 
         void printFinalSummary() {
+            if (format != OutputFormat.HUMAN) {
+                return;
+            }
+
             long totalElapsed = System.nanoTime() - this.startNanos;
             long totalCompleted = this.tracker.completed();
             long totalBytesRead = this.tracker.bytesRead();
@@ -218,6 +253,11 @@ public class Benchmark implements Callable<Integer> {
             System.out.printf("checksum: %d%n", checksum);
         }
 
+    }
+
+    enum OutputFormat {
+        HUMAN,
+        CSV
     }
 
     private static String formatQuantity(long iops) {

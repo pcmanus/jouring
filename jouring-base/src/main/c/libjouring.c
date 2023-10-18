@@ -3,9 +3,17 @@
 //#include <stdio.h>
 #include "libjouring.h"
 
-extern struct io_uring* create_ring(int depth) {
+extern struct io_uring* create_ring(
+    int depth,
+    bool enableSQPoll
+) {
+    unsigned flags = 0;
+    if (enableSQPoll) {
+        flags |= IORING_SETUP_SQPOLL;
+    }
+
     struct io_uring *ring = malloc(sizeof(struct io_uring));
-    io_uring_queue_init(depth, ring, 0);
+    io_uring_queue_init(depth, ring, flags);
     return ring;
 }
 

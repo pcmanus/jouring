@@ -14,9 +14,9 @@ class NalimRing extends Ring {
 
     protected final Result result = new Result();
 
-    NalimRing(int depth) {
-        super(depth);
-        this.ringPtr = create_ring(depth);
+    NalimRing(Parameters parameters) {
+        super(parameters);
+        this.ringPtr = create_ring(parameters.depth(), parameters.useSQPolling());
         this.pendingSubmissionsAddress = ByteBuffers.address(this.pendingSubmissions.serialized);
         this.completionIdsAddress = ByteBuffers.address(completionIdsBuffer);
     }
@@ -61,7 +61,7 @@ class NalimRing extends Ring {
     }
 
     @Link
-    private static native long create_ring(int depth);
+    private static native long create_ring(int depth, boolean enableSQPolling);
 
     @Link
     private static native int submit_and_check_completions(

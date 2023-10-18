@@ -20,7 +20,11 @@ class PanamaRing extends Ring {
         SymbolLookup loaderLookup = SymbolLookup.loaderLookup();
         SymbolLookup lookByName = name -> loaderLookup.find(name).or(() -> linker.defaultLookup().find(name));
 
-        FunctionDescriptor createRingDesc = FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.JAVA_INT);
+        FunctionDescriptor createRingDesc = FunctionDescriptor.of(
+                ValueLayout.ADDRESS,
+                ValueLayout.JAVA_INT,
+                ValueLayout.JAVA_BOOLEAN
+        );
         createRingMH = lookByName
                 .find("create_ring")
                 .map(addr -> linker.downcallHandle(addr, createRingDesc))
@@ -59,11 +63,11 @@ class PanamaRing extends Ring {
     private final MemorySegment result;
     private final MemorySegment completionIdsPtr;
 
-    PanamaRing(int depth) {
-        super(depth);
+    PanamaRing(Parameters parameters) {
+        super(parameters);
 
         try {
-            this.ringPtr = ((MemorySegment)createRingMH.invoke(this.depth));
+            this.ringPtr = (MemorySegment)createRingMH.invoke(parameters.depth(), parameters.useSQPolling());
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }

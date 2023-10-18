@@ -18,7 +18,8 @@ public class IOUringVThread extends Engine {
                 .builder()
                 .depth(parameters.depth())
                 .bufferSize(parameters.blockSize())
-                .useNalim(parameters.useNalim());
+                .useNalim(parameters.useNalim())
+                .useSQPolling(parameters.useSQPolling());
         return parameters.ringCount() == 1 ? builder.build() : builder.buildMulti(parameters.ringCount());
     }
 

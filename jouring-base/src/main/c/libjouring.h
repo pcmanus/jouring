@@ -12,7 +12,10 @@ struct read_submission {
     long id;
 };
 
-extern struct io_uring* create_ring(int depth);
+extern struct io_uring* create_ring(
+    int depth,
+    bool enableIOPoll
+);
 
 
 struct read_submission_result {

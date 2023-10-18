@@ -53,6 +53,10 @@ class ReadSubmissions {
     }
 
     void clear(int count) {
+        if (count == 0) {
+            return;
+        }
+
         if (count >= this.size) {
             this.serialized.clear();
             this.size = 0;
