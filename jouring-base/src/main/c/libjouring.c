@@ -1,15 +1,22 @@
 #include <stdlib.h>
 #include <liburing.h>
-//#include <stdio.h>
+#include <stdio.h>
+
+#include <fcntl.h>
+
 #include "libjouring.h"
 
 extern struct io_uring* create_ring(
     int depth,
-    bool enableSQPoll
+    bool enableSQPoll,
+    bool enableIOPoll
 ) {
     unsigned flags = 0;
     if (enableSQPoll) {
         flags |= IORING_SETUP_SQPOLL;
+    }
+    if (enableIOPoll) {
+        flags |= IORING_SETUP_IOPOLL;
     }
 
     struct io_uring *ring = malloc(sizeof(struct io_uring));
@@ -41,6 +48,7 @@ extern int submit_and_check_completions(
         unsigned i = 0;
         io_uring_for_each_cqe(ring, head, cqe) {
             long id = (long) io_uring_cqe_get_data(cqe);
+            //fprintf(stdout, "[C] res = %d\n", cqe->res);
             //fprintf(stdout, "[C %d] completed[%ld] = %ld, \n", res->completed, id);
             completed_ids[res->completed++] = id;
             i++;
@@ -68,10 +76,13 @@ extern int submit_and_check_completions(
     }
     if (has_submitted) {
         io_uring_submit(ring);
+    } else if (ring->flags & IORING_SETUP_IOPOLL) {
+        io_uring_peek_cqe(ring, &cqe);
     }
     if (has_submitted || !check_completion_pre_submission) {
         unsigned i = 0;
         io_uring_for_each_cqe(ring, head, cqe) {
+            //fprintf(stdout, "[C] res = %d\n", cqe->res);
             long id = (long) io_uring_cqe_get_data(cqe);
             //fprintf(stdout, "[C %d] completed[%ld] = %ld, \n", res->completed, id);
             completed_ids[res->completed++] = id;
@@ -86,4 +97,23 @@ extern int submit_and_check_completions(
 extern void destroy_ring(struct io_uring* ring) {
     io_uring_queue_exit(ring);
     free(ring);
+}
+
+// TODO: this is rather fragile as it basically assumes the ring is empty at the beginning.
+extern int open_file(struct io_uring* ring, const char* path, bool direct) {
+    //fprintf(stdout, "Opening %s\n", path);
+    struct io_uring_cqe *cqe;
+    struct io_uring_sqe *sqe = io_uring_get_sqe(ring);
+    if (!sqe) {
+        return -1;
+    }
+    int flags = O_RDONLY;
+    if (direct) {
+        flags |= O_DIRECT;
+    }
+    io_uring_prep_openat(sqe, -1, path, flags, 0);
+    io_uring_submit(ring);
+    io_uring_wait_cqe(ring, &cqe);
+
+    return cqe->res;
 }

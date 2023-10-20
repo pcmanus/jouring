@@ -57,12 +57,17 @@ public enum EngineDescriptor {
     ),
 
     IOURING_VTHREAD(
-            "Reads are asynchronously using io_uring with one ring, through nalim",
+            "Reads are done through io_uring with vthread to wait on completion",
             IOUringVThread::new
     ),
 
+    IOURING_NATIVE(
+            "Reads are asynchronously using io_uring with native thread to wait on completion",
+            IOUringNative::new
+    ),
+
     IOURING_ASYNC(
-            "Reads are asynchronously using io_uring with one ring, through nalim",
+            "Reads are asynchronously using io_uring (and completion are handled by a thread pool)",
             IOUringAsync::new
     );
 

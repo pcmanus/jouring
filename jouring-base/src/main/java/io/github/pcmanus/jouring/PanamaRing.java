@@ -8,6 +8,7 @@ class PanamaRing extends Ring {
     private static final MethodHandle createRingMH;
     private static final MethodHandle submitAndCheckCompletionsMH;
     private static final MethodHandle destroyRingMH;
+    private static final MethodHandle openFileMH;
 
     private static final StructLayout resultLayout;
     private static final VarHandle submittedHandle;
@@ -23,6 +24,7 @@ class PanamaRing extends Ring {
         FunctionDescriptor createRingDesc = FunctionDescriptor.of(
                 ValueLayout.ADDRESS,
                 ValueLayout.JAVA_INT,
+                ValueLayout.JAVA_BOOLEAN,
                 ValueLayout.JAVA_BOOLEAN
         );
         createRingMH = lookByName
@@ -56,6 +58,17 @@ class PanamaRing extends Ring {
                 .find("destroy_ring")
                 .map(addr -> linker.downcallHandle(addr, destroyRingDesc))
                 .orElseThrow();
+
+        FunctionDescriptor openFileDesc = FunctionDescriptor.of(
+                ValueLayout.JAVA_INT,
+                ValueLayout.ADDRESS,
+                ValueLayout.ADDRESS,
+                ValueLayout.JAVA_BOOLEAN
+        );
+        openFileMH = lookByName
+                .find("open_file")
+                .map(addr -> linker.downcallHandle(addr, openFileDesc))
+                .orElseThrow();
     }
 
     private final MemorySegment ringPtr;
@@ -67,7 +80,7 @@ class PanamaRing extends Ring {
         super(parameters);
 
         try {
-            this.ringPtr = (MemorySegment)createRingMH.invoke(parameters.depth(), parameters.useSQPolling());
+            this.ringPtr = (MemorySegment)createRingMH.invoke(parameters.depth(), parameters.useSQPolling(), parameters.useIOPolling());
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }
@@ -109,5 +122,32 @@ class PanamaRing extends Ring {
     @Override
     int lastSubmitted() {
         return (int) submittedHandle.get(this.result);
+    }
+
+    @Override
+    FileOpener createFileOpener() {
+        return new PanamaFileOpener(parameters.directIO());
+    }
+
+    static class PanamaFileOpener extends FileOpener {
+        private final MemorySegment ringPtr;
+
+        protected PanamaFileOpener(boolean useDirect) {
+            super(useDirect);
+            try {
+                this.ringPtr = (MemorySegment)createRingMH.invoke(1, false, false);
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Override
+        protected int openInternal(MemorySegment filePathAsSegment) {
+            try {
+                return (int)openFileMH.invoke(this.ringPtr, filePathAsSegment, this.useDirect);
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 }

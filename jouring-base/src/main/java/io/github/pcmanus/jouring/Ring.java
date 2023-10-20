@@ -45,6 +45,8 @@ abstract class Ring implements AutoCloseable {
     abstract int lastCompleted();
     abstract int lastSubmitted();
 
+    abstract FileOpener createFileOpener();
+
     // Modifies the `ReadSubmission` to remove any completed reads.
     // Completions must be fetched after that with lastCompleted/completed(int)
     void submitAndCheckCompletions() {
@@ -82,6 +84,8 @@ abstract class Ring implements AutoCloseable {
 
     record Parameters(
             int depth,
-            boolean useSQPolling
+            boolean useSQPolling,
+            boolean useIOPolling,
+            boolean directIO
     ) {}
 }

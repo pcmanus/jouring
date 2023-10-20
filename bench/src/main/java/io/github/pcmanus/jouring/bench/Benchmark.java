@@ -37,16 +37,22 @@ public class Benchmark implements Callable<Integer> {
 
     @CommandLine.Option(
             names = {"-d", "--depth"},
-            description = "The depth of the underlying ring for io_uring engines, default to 128",
+            description = "The depth of the underlying ring for io_uring engines, default to 8",
             paramLabel = "<int>"
     )
-    private int depth = 128;
+    private int depth = 64;
 
     @CommandLine.Option(
             names = {"--sq-polling"},
             description = "Whether to use submission queue polling for the io_uring engines, default to false"
     )
     private boolean useSQPolling = false;
+
+    @CommandLine.Option(
+            names = {"--io-polling"},
+            description = "Whether to use IO polling for the io_uring engines, default to false (note that this only work with direct IO)"
+    )
+    private boolean useIOPolling = false;
 
     @CommandLine.Option(
             names = {"--rings"},
@@ -96,6 +102,13 @@ public class Benchmark implements Callable<Integer> {
     )
     private OutputFormat outputFormat = OutputFormat.HUMAN;
 
+    @CommandLine.Option(
+            names = {"--distribution"},
+            description = "Distribution for the reads. Supported: ${COMPLETION-CANDIDATES}",
+            paramLabel = "<distribution>"
+    )
+    private Distribution distribution = Distribution.RANDOM;
+
     @Override
     public Integer call() throws Exception {
         Parameters parameters = new Parameters(
@@ -108,13 +121,14 @@ public class Benchmark implements Callable<Integer> {
                 this.useNalim,
                 this.directIO,
                 this.ringCount,
-                this.useSQPolling
+                this.useSQPolling,
+                this.useIOPolling,
+                this.outputFormat == OutputFormat.HUMAN
         );
+        Stream<ReadTask> tasks = distribution.generator.apply(parameters);
+        CompletionTracker completionTracker = new CompletionTracker();
 
         printParameters(parameters);
-
-        Stream<ReadTask> tasks = ReadTaskGenerators.uniform(parameters);
-        CompletionTracker completionTracker = new CompletionTracker();
 
         MetricsPrinter printer = new MetricsPrinter(completionTracker, outputFormat);
         try (ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor()) {
@@ -149,6 +163,9 @@ public class Benchmark implements Callable<Integer> {
             if (parameters.useSQPolling()) {
                 moreOpts += ", sq-polling";
             }
+            if (parameters.useIOPolling) {
+                moreOpts += ", I/O polling";
+            }
             return String.format(
                     "(%s, depth=%d, rings=%d%s)",
                     parameters.useNalim ? "nalim" : "panama",
@@ -176,7 +193,9 @@ public class Benchmark implements Callable<Integer> {
             boolean useNalim,
             boolean directIO,
             int ringCount,
-            boolean useSQPolling
+            boolean useSQPolling,
+            boolean useIOPolling,
+            boolean verbose
     ) {
     }
 

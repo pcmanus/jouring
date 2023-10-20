@@ -14,6 +14,7 @@ struct read_submission {
 
 extern struct io_uring* create_ring(
     int depth,
+    bool enableSQPoll,
     bool enableIOPoll
 );
 
@@ -35,5 +36,8 @@ extern int submit_and_check_completions(
 
 
 extern void destroy_ring(struct io_uring* ring);
+
+
+extern int open_file(struct io_uring* ring, const char* path, bool direct);
 
 #endif
